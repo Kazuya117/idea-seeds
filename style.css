@@ -1,0 +1,107 @@
+:root {
+  --bg: #f6f1e4;
+  --card: #fffdf7;
+  --line: #e4dcc6;
+  --text: #2c3324;
+  --mute: #7a7a66;
+  --accent: #3f8f4f;
+  --accent-ink: #ffffff;
+  --soft: #e6f2e3;
+  --warn: #b8502f;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--bg); color: var(--text); line-height: 1.65;
+  font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", system-ui, sans-serif;
+}
+[hidden] { display: none !important; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--accent); }
+
+.center { max-width: 420px; margin: 0 auto; padding: 12vh 24px 40px; text-align: center; }
+.logo { font-size: 64px; line-height: 1; margin-bottom: 8px; }
+.center h1 { font-size: 28px; margin: 0 0 12px; }
+.lead { color: var(--mute); margin: 0 0 28px; }
+.small { font-size: 12.5px; color: var(--mute); margin: 16px 0 0; }
+.error { color: var(--warn); font-size: 14px; background: #fbe9e2; border-radius: 12px; padding: 10px 14px; }
+
+main { max-width: 560px; margin: 0 auto; padding: calc(18px + env(safe-area-inset-top)) 16px 110px; }
+header { margin: 8px 4px 18px; }
+.eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .1em; margin: 0 0 4px; font-weight: 600; }
+h1 { font-size: 24px; line-height: 1.4; margin: 0; }
+h2 { font-size: 15px; margin: 0 0 8px; }
+.note { font-size: 13px; color: var(--mute); margin: -6px 4px 16px; }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 12px; }
+.card.dim { opacity: .6; }
+label { display: block; font-size: 14px; font-weight: 600; margin: 4px 0 6px; }
+input, textarea {
+  width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px; resize: vertical;
+}
+input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.count { text-align: right; font-size: 12px; color: var(--mute); margin: 2px 2px 10px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row input { flex: 1; min-width: 0; }
+
+.primary {
+  width: 100%; min-height: 56px; border: 0; border-radius: 28px; margin-top: 8px;
+  background: var(--accent); color: var(--accent-ink); font-size: 17px; font-weight: 700;
+}
+.primary:disabled { opacity: .45; }
+.ghost {
+  display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+  background: transparent; border: 1px solid var(--line); border-radius: 12px; min-height: 44px; padding: 8px 14px; font-size: 14px; color: var(--text);
+}
+.ghost.warn { color: var(--warn); }
+.center input { text-align: center; margin-bottom: 8px; }
+
+/* アイデアのカード */
+.idea-top { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--mute); margin-bottom: 8px; }
+.stage { background: var(--soft); color: var(--accent); border-radius: 999px; padding: 2px 10px; font-weight: 600; white-space: nowrap; }
+.idea-top .sp { flex: 1; }
+.what { font-size: 17px; font-weight: 600; margin: 0 0 6px; overflow-wrap: anywhere; }
+.whom { font-size: 14px; color: var(--mute); margin: 0 0 10px; overflow-wrap: anywhere; }
+.whom b { color: var(--text); font-weight: 600; }
+.step-now { font-size: 13.5px; background: var(--soft); border-radius: 12px; padding: 8px 12px; margin: 0 0 10px; overflow-wrap: anywhere; }
+.stamps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.stamp {
+  min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: #fff; font-size: 13.5px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.stamp b { font-variant-numeric: tabular-nums; color: var(--mute); font-weight: 600; }
+.stamp.on { background: var(--soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.stamp.on b { color: var(--accent); }
+.more { background: none; border: 0; font-size: 12.5px; color: var(--mute); padding: 6px 4px; min-height: 32px; text-decoration: underline; }
+.menu { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.menu p { width: 100%; margin: 0; font-size: 13px; color: var(--mute); }
+.badge { font-size: 12px; background: #fbe9e2; color: var(--warn); border-radius: 999px; padding: 2px 10px; }
+
+/* 一歩 */
+.steps { list-style: none; margin: 8px 0; padding: 0; }
+.steps li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-top: 1px dashed var(--line); font-size: 14.5px; }
+.steps li span { flex: 1; overflow-wrap: anywhere; }
+.steps li.done span { color: var(--mute); text-decoration: line-through; }
+.check { width: 28px; height: 28px; flex: none; border-radius: 50%; border: 2px solid var(--accent); background: #fff; color: #fff; font-size: 15px; line-height: 1; padding: 0; }
+.steps li.done .check { background: var(--accent); }
+.x { background: none; border: 0; color: var(--mute); font-size: 18px; min-width: 32px; min-height: 32px; padding: 0; }
+.rules { margin: 0; padding-left: 20px; font-size: 14px; }
+.empty { text-align: center; color: var(--mute); padding: 36px 12px; font-size: 14px; }
+
+#tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center;
+  background: rgba(246,241,228,.95); backdrop-filter: blur(10px); border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+#tabs button { flex: 1; max-width: 130px; background: none; border: 0; padding: 9px 0 11px; font-size: 11px; color: var(--mute); }
+#tabs button span { display: block; font-size: 20px; filter: grayscale(1) opacity(.55); }
+#tabs button.on { color: var(--accent); font-weight: 600; }
+#tabs button.on span { filter: none; }
+
+#toast {
+  position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%); z-index: 20;
+  background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: 20px; font-size: 14px; max-width: 88vw; text-align: center;
+}
+.doc { max-width: 640px; margin: 0 auto; padding: 32px 20px 60px; }
+.doc h1 { font-size: 24px; } .doc h2 { font-size: 17px; margin-top: 28px; } .doc li { margin-bottom: 6px; }

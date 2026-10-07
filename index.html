@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f1e4">
+<title>アイデアの種</title>
+<meta name="description" content="思いつきの段階で出せる、アイデア共有の場">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+
+<!-- 読み込み中 -->
+<div id="boot" class="center"><p>読み込んでいます…</p></div>
+
+<!-- ログイン -->
+<section id="login" class="center" hidden>
+  <div class="logo">🌱</div>
+  <h1>アイデアの種</h1>
+  <p class="lead">まだ形になっていなくて大丈夫。<br>思いつきを、ひとことで蒔いてみよう。</p>
+  <button id="login-btn" class="primary">学校のGoogleアカウントでログイン</button>
+  <p id="login-error" class="error" hidden></p>
+  <p class="small">ログイン画面に「lotmxestisnibdyfemdk.supabase.co に移動」と表示されます。このアプリのログイン用サーバーの名前です。</p>
+  <p class="small">投稿に出るのはニックネームだけです。名前やメールアドレスは、ほかの人には見えません。<br><a href="privacy.html">データの扱いについて</a></p>
+</section>
+
+<!-- ニックネーム設定 -->
+<section id="nick" class="center" hidden>
+  <div class="logo">🏷️</div>
+  <h1>ニックネームを決めよう</h1>
+  <p class="lead">投稿にはこの名前だけが出ます。<br>本名や、だれか分かる名前は避けてください。</p>
+  <input id="nick-input" maxlength="20" placeholder="2〜20文字" autocomplete="off">
+  <button id="nick-save" class="primary">これにする</button>
+  <p id="nick-error" class="error" hidden></p>
+</section>
+
+<!-- アプリ本体 -->
+<div id="app" hidden>
+  <main>
+    <!-- みんなの種 -->
+    <section id="view-feed" class="view">
+      <header><p class="eyebrow">みんなの種</p><h1>どの種を、応援する？</h1></header>
+      <div id="feed"></div>
+    </section>
+
+    <!-- 種をまく -->
+    <section id="view-post" class="view" hidden>
+      <header><p class="eyebrow">種をまく</p><h1>2つ答えるだけで、<br>アイデアになる。</h1></header>
+      <div class="card">
+        <label for="f-what">なにを？</label>
+        <textarea id="f-what" maxlength="140" rows="3" placeholder="例：放課後の空き教室を、スマホで予約できるようにしたい"></textarea>
+        <p class="count"><span id="c-what">0</span>/140</p>
+        <label for="f-whom">だれのために？</label>
+        <textarea id="f-whom" maxlength="140" rows="2" placeholder="例：自習する場所が見つからない人"></textarea>
+        <p class="count"><span id="c-whom">0</span>/140</p>
+      </div>
+      <button id="post-btn" class="primary">種をまく</button>
+      <p class="small">うまく書けなくて大丈夫。あとから直せます。<br>名前・連絡先など、個人が分かることは書かないでください。</p>
+    </section>
+
+    <!-- じぶんの畑 -->
+    <section id="view-mine" class="view" hidden>
+      <header><p class="eyebrow">じぶんの畑</p><h1>今週の、小さな一歩は？</h1></header>
+      <p class="note">一歩を達成するたびに、種が育ちます。🌰 種 → 🌱 芽 → 🌷 つぼみ → 🌸 花</p>
+      <div id="mine"></div>
+    </section>
+
+    <!-- 管理（生徒チーム） -->
+    <section id="view-mod" class="view" hidden>
+      <header><p class="eyebrow">管理</p><h1>通報と、非表示の投稿</h1></header>
+      <div id="mod"></div>
+    </section>
+
+    <!-- 設定 -->
+    <section id="view-me" class="view" hidden>
+      <header><p class="eyebrow">設定</p><h1 id="me-name"></h1></header>
+      <div class="card">
+        <label for="me-nick">ニックネームを変える</label>
+        <div class="row"><input id="me-nick" maxlength="20" autocomplete="off"><button id="me-save" class="ghost">変更</button></div>
+      </div>
+      <div class="card">
+        <h2>みんなで守ること</h2>
+        <ul class="rules">
+          <li>否定しない。アイデアは育てるもの。</li>
+          <li>名前・連絡先など、個人が分かることは書かない。</li>
+          <li>いやな投稿を見つけたら、「通報」で知らせる。</li>
+        </ul>
+        <p class="small">通報が3件たまった投稿は、管理チームが確認するまで自動で非表示になります。</p>
+      </div>
+      <div class="row">
+        <a class="ghost" href="privacy.html">データの扱いについて</a>
+        <button id="logout-btn" class="ghost">ログアウト</button>
+      </div>
+      <p class="small" id="ver"></p>
+    </section>
+  </main>
+
+  <nav id="tabs">
+    <button data-view="feed" class="on"><span>🌱</span>みんなの種</button>
+    <button data-view="post"><span>✏️</span>種をまく</button>
+    <button data-view="mine"><span>🪴</span>じぶんの畑</button>
+    <button data-view="mod" id="tab-mod" hidden><span>🛡️</span>管理</button>
+    <button data-view="me"><span>⚙️</span>設定</button>
+  </nav>
+</div>
+
+<div id="toast" hidden role="status"></div>
+<script src="vendor/supabase.js"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>

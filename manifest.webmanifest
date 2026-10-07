@@ -1,0 +1,12 @@
+{
+  "name": "アイデアの種",
+  "short_name": "アイデアの種",
+  "description": "思いつきの段階で出せる、アイデア共有の場",
+  "lang": "ja",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#f6f1e4",
+  "theme_color": "#f6f1e4",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
