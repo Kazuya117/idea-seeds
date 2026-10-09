@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
-<link rel="stylesheet" href="style.css?v=1">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
@@ -56,6 +56,9 @@
         <label for="f-whom">だれのために？</label>
         <textarea id="f-whom" maxlength="140" rows="2" placeholder="例：自習する場所が見つからない人"></textarea>
         <p class="count"><span id="c-whom">0</span>/140</p>
+        <label>どの種をまく？</label>
+        <div id="plant-picker" class="picker"></div>
+        <p class="small" style="margin-top:8px">咲く花は選べますが、育つかどうかは、これからの一歩と仲間の応援しだいです。</p>
       </div>
       <button id="post-btn" class="primary">種をまく</button>
       <p class="small">うまく書けなくて大丈夫。あとから直せます。<br>名前・連絡先など、個人が分かることは書かないでください。</p>
@@ -64,7 +67,7 @@
     <!-- じぶんの畑 -->
     <section id="view-mine" class="view" hidden>
       <header><p class="eyebrow">じぶんの畑</p><h1>今週の、小さな一歩は？</h1></header>
-      <p class="note">一歩を達成するたびに、種が育ちます。🌰 種 → 🌱 芽 → 🌷 つぼみ → 🌸 花</p>
+      <p class="note">種は、💧水（自分の一歩）・☀️日光（応援）・🌿肥料（仲間）の3つがそろうと育ちます。<br>種 → 発芽 → 双葉 → 若木 → つぼみ → 開花 → 実</p>
       <div id="mine"></div>
     </section>
 
@@ -109,6 +112,6 @@
 
 <div id="toast" hidden role="status"></div>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>

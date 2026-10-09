@@ -1,6 +1,6 @@
 // アプリの部品（HTML・CSS・JS）だけをキャッシュする。データ（Supabase）への通信には手を出さない。
-const CACHE = 'idea-seeds-v1';
-const FILES = ['./', 'index.html', 'style.css?v=1', 'app.js?v=1', 'vendor/supabase.js', 'manifest.webmanifest', 'icon.svg', 'privacy.html'];
+const CACHE = 'idea-seeds-v2';
+const FILES = ['./', 'index.html', 'style.css?v=2', 'app.js?v=2', 'vendor/supabase.js', 'manifest.webmanifest', 'icon.svg', 'privacy.html'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: 'no-cache' }))))); self.skipWaiting(); });
 self.addEventListener('activate', (e) => e.waitUntil(
   caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())

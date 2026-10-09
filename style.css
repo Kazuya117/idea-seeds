@@ -105,3 +105,31 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 
 }
 .doc { max-width: 640px; margin: 0 auto; padding: 32px 20px 60px; }
 .doc h1 { font-size: 24px; } .doc h2 { font-size: 17px; margin-top: 28px; } .doc li { margin-bottom: 6px; }
+
+/* ---------- 育成 ---------- */
+.plant { flex: none; display: block; }
+.idea-body { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+.idea-body > div { flex: 1; min-width: 0; }
+.idea-body .whom { margin-bottom: 4px; }
+.mini { font-size: 12.5px; color: var(--mute); letter-spacing: .04em; }
+.legend { font-size: 11.5px; color: var(--mute); margin: 8px 2px 0; }
+.garden {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 4px;
+  background: linear-gradient(#dcefF6 0 58%, #cfe3b8 58%); border: 1px solid var(--line);
+  border-radius: 18px; padding: 14px 8px 8px; margin-bottom: 12px;
+}
+.plot { background: none; border: 0; padding: 0; display: flex; flex-direction: column; align-items: center; font-size: 12px; color: var(--text); font-weight: 600; }
+.plot span { background: #ffffffcc; border-radius: 999px; padding: 0 8px; margin-top: -2px; }
+.grow { display: flex; gap: 12px; align-items: center; background: linear-gradient(#eaf5f9, #f3f8ea); border-radius: 14px; padding: 8px 12px 8px 4px; margin-bottom: 12px; }
+.grow > div { flex: 1; min-width: 0; }
+.meter { display: grid; grid-template-columns: 62px 1fr 34px; align-items: center; gap: 8px; font-size: 13px; margin: 5px 0; }
+.meter .bar { height: 10px; background: #fff; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.meter .bar i { display: block; height: 100%; background: var(--accent); border-radius: 6px; }
+.meter.lack .bar i { background: #e2a43a; }
+.meter b { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--mute); }
+.grow-hint { font-size: 12.5px; margin: 8px 0 2px; color: var(--text); }
+.picker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.pick { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 4px 0 6px; display: flex; flex-direction: column; align-items: center; font-size: 10.5px; min-width: 0; }
+.pick svg { width: 100%; max-width: 54px; height: auto; }
+.pick.on { border-color: var(--accent); background: var(--soft); font-weight: 700; color: var(--accent); }
+.pick span { white-space: nowrap; font-size: 10px; letter-spacing: -.04em; }
