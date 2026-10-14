@@ -55,6 +55,9 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 
   background: transparent; border: 1px solid var(--line); border-radius: 12px; min-height: 44px; padding: 8px 14px; font-size: 14px; color: var(--text);
 }
 .ghost.warn { color: var(--warn); }
+.ghost.wide { width: 100%; margin-top: 14px; }
+.linkbtn { background: none; border: 0; padding: 0 2px; color: var(--accent); text-decoration: underline; font-size: inherit; }
+.banner { background: #fff3d6; border: 1px solid #f0d9a0; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; margin: 0 0 12px; }
 .center input { text-align: center; margin-bottom: 8px; }
 
 /* アイデアのカード */

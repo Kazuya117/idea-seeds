@@ -1,8 +1,9 @@
 'use strict';
 /* アイデアの種 — 思いつきの段階で出せるアイデア共有の場
    データは Supabase に保存。誰が何をできるかはデータベース側（行レベルセキュリティ）で守っている。
-   下のキーは公開用（publishable）で、ページに含めてよい種類のもの。 */
-const VERSION = 2;
+   下のキーは公開用（publishable）で、ページに含めてよい種類のもの。
+   見本モード: ログインしなくても、架空の人と種でひととおりの動きを見られる。データベースには何も書かない。 */
+const VERSION = 3;
 const SB_URL = 'https://lotmxestisnibdyfemdk.supabase.co';
 const SB_KEY = 'sb_publishable_Y0Vyfl28HOGzRdj_t5dr4g_b_xIrP3K';
 const sb = window.supabase.createClient(SB_URL, SB_KEY);
@@ -37,6 +38,7 @@ let ideas = [];       // 一覧に出すアイデア
 let view = 'feed';
 let openMenu = null;  // メニューを開いているアイデアのid
 let editing = null;   // 書き直し中のアイデアのid
+let demo = false;     // 見本モードか
 
 function toast(msg) {
   const t = $('#toast');
@@ -152,7 +154,7 @@ $('#login-btn').addEventListener('click', async () => {
   if (error) { $('#login-btn').disabled = false; loginError(explain(error)); }
 });
 function loginError(msg) { const e = $('#login-error'); e.textContent = msg; e.hidden = false; }
-$('#logout-btn').addEventListener('click', async () => { await sb.auth.signOut(); });
+$('#logout-btn').addEventListener('click', async () => { if (demo) return leaveDemo(); await sb.auth.signOut(); });
 
 /* ログインに失敗して戻ってきたとき（学校以外のアカウントなど） */
 function readAuthError() {
@@ -166,6 +168,7 @@ function readAuthError() {
 }
 
 async function onSession(session) {
+  if (demo) return;
   user = session ? session.user : null;
   if (!user) { me = null; ideas = []; screen('login'); $('#login-btn').disabled = false; return; }
   const { data, error } = await sb.from('profiles').select('id, nickname, role').eq('id', user.id).maybeSingle();
@@ -180,7 +183,7 @@ async function onSession(session) {
 async function saveNick(value, errEl) {
   const nickname = value.trim();
   if (nickname.length < 2 || nickname.length > 20) { if (errEl) { errEl.textContent = '2〜20文字で入力してください'; errEl.hidden = false; } else toast('2〜20文字で入力してください'); return false; }
-  const { error } = await sb.from('profiles').update({ nickname }).eq('id', user.id);
+  const { error } = await db.updateNick(nickname);
   if (error) {
     const msg = error.code === '23505' ? 'そのニックネームは使われています' : explain(error);
     if (errEl) { errEl.textContent = msg; errEl.hidden = false; } else toast(msg);
@@ -195,9 +198,39 @@ $('#me-save').addEventListener('click', async () => {
   if (await saveNick($('#me-nick').value)) { $('#me-name').textContent = me.nickname; toast('ニックネームを変更しました'); }
 });
 
+/* ---------- データの読み書き ---------- */
+/* 本番は Supabase。見本モードのときは、この画面の中だけで同じ形の読み書きをする（下の demoDb）。
+   どれも { data, error } を返す。 */
+const live = {
+  load: () => sb.from('ideas').select(IDEA_SELECT).order('created_at', { ascending: false }).limit(100),
+  updateNick: (nickname) => sb.from('profiles').update({ nickname }).eq('id', user.id),
+  addStamp: (idea_id, kind) => sb.from('reactions').insert({ idea_id, kind }),
+  removeStamp: (idea_id, kind) => sb.from('reactions').delete().match({ idea_id, user_id: user.id, kind }),
+  report: (idea_id, reason) => sb.from('reports').insert({ idea_id, reason }),
+  deleteIdea: (id) => sb.from('ideas').delete().eq('id', id),
+  setHidden: (id, hidden) => sb.rpc('set_idea_hidden', { p_idea_id: id, p_hidden: hidden }),
+  updateIdea: (id, patch) => sb.from('ideas').update(patch).eq('id', id),
+  insertIdea: (row) => sb.from('ideas').insert(row),
+  insertStep: (idea_id, body) => sb.from('steps').insert({ idea_id, body }),
+  deleteStep: (id) => sb.from('steps').delete().eq('id', id),
+  updateStep: (id, patch) => sb.from('steps').update(patch).eq('id', id),
+  async loadMod() {
+    const [rep, hid] = await Promise.all([
+      sb.from('reports').select('id, reason, created_at, idea_id').eq('resolved', false).order('created_at', { ascending: false }),
+      sb.from('ideas').select(IDEA_SELECT).eq('hidden', true).order('created_at', { ascending: false }),
+    ]);
+    if (rep.error || hid.error) return { error: rep.error || hid.error };
+    const ids = [...new Set((rep.data || []).map((r) => r.idea_id))];
+    let reported = [];
+    if (ids.length) { const r = await sb.from('ideas').select(IDEA_SELECT).in('id', ids); reported = r.data || []; }
+    return { data: { reports: rep.data || [], hidden: hid.data || [], reported } };
+  },
+};
+let db = live;
+
 /* ---------- 読み込み ---------- */
 async function refresh() {
-  const { data, error } = await sb.from('ideas').select(IDEA_SELECT).order('created_at', { ascending: false }).limit(100);
+  const { data, error } = await db.load();
   if (error) { toast(explain(error)); return; }
   ideas = data || [];
   render();
@@ -288,37 +321,35 @@ async function onCardClick(e) {
   if (act === 'stamp') {
     const kind = btn.dataset.kind;
     const on = (idea.reactions || []).some((r) => r.kind === kind && r.user_id === user.id);
-    res = on
-      ? await sb.from('reactions').delete().match({ idea_id: id, user_id: user.id, kind })
-      : await sb.from('reactions').insert({ idea_id: id, kind });
+    res = on ? await db.removeStamp(id, kind) : await db.addStamp(id, kind);
   } else if (act === 'report') {
-    res = await sb.from('reports').insert({ idea_id: id, reason: btn.dataset.reason });
+    res = await db.report(id, btn.dataset.reason);
     if (res.error && res.error.code === '23505') { openMenu = null; render(); return toast('この投稿はすでに通報済みです'); }
     if (!res.error) toast('通報しました。管理チームが確認します');
     openMenu = null;
   } else if (act === 'delete') {
     if (btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = 'もう一度押すと消えます'; return; }
-    res = await sb.from('ideas').delete().eq('id', id);
+    res = await db.deleteIdea(id);
     if (!res.error) toast('消しました');
   } else if (act === 'hide') {
-    res = await sb.rpc('set_idea_hidden', { p_idea_id: id, p_hidden: true });
+    res = await db.setHidden(id, true);
     if (!res.error) toast('非表示にしました');
   } else if (act === 'save') {
     const what = card.querySelector('.e-what').value.trim(), for_whom = card.querySelector('.e-whom').value.trim();
     if (!what || !for_whom) return toast('2つとも書いてください');
-    res = await sb.from('ideas').update({ what, for_whom }).eq('id', id);
+    res = await db.updateIdea(id, { what, for_whom });
     if (!res.error) { editing = null; toast('書き直しました'); }
   } else if (act === 'addstep') {
     const input = card.querySelector('.step-input'); const body = input.value.trim();
     if (!body) return toast('一歩をひとこと書いてください');
-    res = await sb.from('steps').insert({ idea_id: id, body });
+    res = await db.insertStep(id, body);
     if (!res.error) toast('一歩を決めました。小さくて大丈夫');
   } else if (act === 'toggle' || act === 'delstep') {
     const stepId = btn.closest('[data-step]').dataset.step;
     const step = idea.steps.find((s) => s.id === stepId);
-    if (act === 'delstep') res = await sb.from('steps').delete().eq('id', stepId);
+    if (act === 'delstep') res = await db.deleteStep(stepId);
     else {
-      res = await sb.from('steps').update({ done_at: step.done_at ? null : new Date().toISOString() }).eq('id', stepId);
+      res = await db.updateStep(stepId, { done_at: step.done_at ? null : new Date().toISOString() });
       if (!res.error && !step.done_at) toast('一歩すすみました。💧 水が増えました');
     }
   }
@@ -337,7 +368,7 @@ $('#post-btn').addEventListener('click', async () => {
   const what = $('#f-what').value.trim(), for_whom = $('#f-whom').value.trim();
   if (!what || !for_whom) return toast('2つとも、ひとことで大丈夫なので書いてください');
   $('#post-btn').disabled = true;
-  const { error } = await sb.from('ideas').insert({ what, for_whom, plant: pickedPlant });
+  const { error } = await db.insertIdea({ what, for_whom, plant: pickedPlant });
   $('#post-btn').disabled = false;
   if (error) return toast(explain(error));
   $('#f-what').value = ''; $('#f-whom').value = ''; $('#c-what').textContent = '0'; $('#c-whom').textContent = '0';
@@ -357,19 +388,12 @@ renderPicker();
 
 /* ---------- 管理（生徒チーム） ---------- */
 async function loadMod() {
-  const [rep, hid] = await Promise.all([
-    sb.from('reports').select('id, reason, created_at, idea_id').eq('resolved', false).order('created_at', { ascending: false }),
-    sb.from('ideas').select(IDEA_SELECT).eq('hidden', true).order('created_at', { ascending: false }),
-  ]);
-  if (rep.error || hid.error) return toast(explain(rep.error || hid.error));
+  const { data, error } = await db.loadMod();
+  if (error) return toast(explain(error));
   const byIdea = {};
-  (rep.data || []).forEach((r) => (byIdea[r.idea_id] = byIdea[r.idea_id] || []).push(r));
-  const ids = Object.keys(byIdea);
-  let reported = [];
-  if (ids.length) {
-    const r = await sb.from('ideas').select(IDEA_SELECT).in('id', ids);
-    reported = (r.data || []).filter((i) => !i.hidden);
-  }
+  data.reports.forEach((r) => (byIdea[r.idea_id] = byIdea[r.idea_id] || []).push(r));
+  const reported = data.reported.filter((i) => !i.hidden);
+  const hid = { data: data.hidden };
   const card = (i, hidden) => `<article class="card" data-id="${i.id}">
       <div class="idea-top"><span>${esc(i.author ? i.author.nickname : '')}</span><span class="sp"></span><span>${ago(i.created_at)}</span></div>
       <p class="what">${esc(i.what)}</p><p class="whom"><b>だれのために：</b>${esc(i.for_whom)}</p>
@@ -388,16 +412,105 @@ $('#mod').addEventListener('click', async (e) => {
   let res;
   if (act === 'delete') {
     if (btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = 'もう一度押すと削除'; return; }
-    res = await sb.from('ideas').delete().eq('id', id);
-  } else res = await sb.rpc('set_idea_hidden', { p_idea_id: id, p_hidden: act === 'hide' });
+    res = await db.deleteIdea(id);
+  } else res = await db.setHidden(id, act === 'hide');
   toast(res.error ? explain(res.error) : '対応しました');
   loadMod();
 });
+
+/* ---------- 見本モード ---------- */
+/* ログインしなくても、どんなアプリか分かるようにする。人・種・応援はすべて架空で、
+   押した結果はこの画面の中にだけ残り、画面を閉じると消える。データベースには何も送らない。 */
+const DEMO_UID = 'demo-me';
+function demoDb() {
+  const t0 = Date.now();
+  const at = (h) => new Date(t0 - h * 3600e3).toISOString();
+  const nid = () => 'demo-' + Math.random().toString(36).slice(2, 8);
+  const NAMES = { [DEMO_UID]: '見本のあなた', u1: 'はるか', u2: 'Kota', u3: 'みお', u4: 'たけ', u5: 'りん', u6: 'ナナ', u7: 'ひまわり係' };
+  const rx = (spec) => { /* 'like:u1,u2 more:u3' の形から反応の一覧を作る */
+    const out = [];
+    spec.split(' ').filter(Boolean).forEach((part) => { const [kind, who] = part.split(':'); who.split(',').forEach((u) => out.push({ kind, user_id: u })); });
+    return out;
+  };
+  const st = (list, h) => list.map((b, k) => ({ id: nid(), body: b.replace(/^!/, ''), done_at: b.startsWith('!') ? null : at(h - k * 20), created_at: at(h + 1 - k) }));
+  const idea = (author_id, what, for_whom, plant, h, reactions, steps, extra = {}) =>
+    ({ id: nid(), author_id, what, for_whom, plant, hidden: false, created_at: at(h), reactions, steps, ...extra });
+  const il = [
+    idea(DEMO_UID, '放課後の空き教室を、スマホで予約できるようにしたい', '自習する場所が見つからない人', 'himawari', 70,
+      rx('like:u1,u2,u3 more:u4 join:u1 help:u2'), st(['先生に空き教室のルールを聞く', '友だち3人に欲しいか聞く', '!紙のアンケートを作ってみる'], 60)),
+    idea(DEMO_UID, '文化祭の出し物を、1年生でも提案できる投票箱', '声を上げにくい1年生', 'sakura', 400,
+      rx('like:u1,u2,u3,u4,u5 more:u6,u7,u1 join:u2,u3 help:u4'), st(['クラスで1人に話す', '担任の先生に相談する', '投票用紙の下書きを作る', '生徒会に見せる', '試しに1クラスでやる'], 380)),
+    idea(DEMO_UID, '朝のあいさつを英語でやってみる週間', '英語を話すきっかけがない人', 'asagao', 5,
+      rx('like:u3'), st(['!ALT の先生に相談する'], 4)),
+    idea('u1', '図書室のおすすめ本を、生徒が付箋で紹介するコーナー', '何を読めばいいか迷う人', 'tulip', 30,
+      rx('like:' + DEMO_UID + ',u2 more:u4'), st(['図書委員の先輩に聞く'], 20)),
+    idea('u2', '体育館のバスケゴールを使える時間を、カレンダーで見える化', '放課後にゴールを取り合っている人', 'tanpopo', 120,
+      rx('like:u1,u3,u4,u6 more:u5 join:u7 help:u1'), st(['体育の先生に現状を聞く', '紙のカレンダーを1週間はってみる', '使った人に感想を聞く'], 100)),
+    idea('u3', '学校の近くの猫マップ', '猫が好きな人（わたし）', 'sakura', 2, rx('like:u6'), []),
+    idea('u4', '使い終わった教科書を後輩にゆずる掲示板', '教科書代をおさえたい家庭', 'himawari', 300,
+      rx('like:u1,u2,u3,u5,u6 more:u7,' + DEMO_UID + ' join:u1,u6 help:u3'), st(['先生に「ゆずる」が校則上OKか聞く', '欲しい人がいるか3人に聞く', '貼り紙を1枚作る', '1冊だけ試しにゆずる'], 280)),
+    idea('u6', '校内放送で、生徒のおすすめ曲を流す', '朝がゆううつな人', 'tanpopo', 50, rx('like:u1,u5 join:u3'), st(['放送委員に聞いてみる'], 40)),
+    idea('u5', '体育のチーム分けを、アプリでランダムにする', 'いつも同じチームになる人', 'asagao', 80, rx('like:u2'), [], { hidden: true }),
+  ];
+  const rl = [ /* 通報（確認待ち） */
+    { id: nid(), idea_id: il[7].id, reason: 'その他', created_at: at(3), resolved: false },
+    { id: nid(), idea_id: il[8].id, reason: '個人が分かる情報', created_at: at(10), resolved: false },
+    { id: nid(), idea_id: il[8].id, reason: '不適切な内容', created_at: at(9), resolved: false },
+    { id: nid(), idea_id: il[8].id, reason: 'その他', created_at: at(8), resolved: false },
+  ];
+  const withAuthor = (i) => ({ ...i, author: { nickname: NAMES[i.author_id] || '名前なし' } });
+  const find = (id) => il.find((i) => i.id === id);
+  const ok = (data = null) => Promise.resolve({ data, error: null });
+  const sorted = () => [...il].sort((a, b) => b.created_at.localeCompare(a.created_at)).map(withAuthor);
+  return {
+    load: () => ok(sorted()),
+    updateNick(nickname) { if (Object.values(NAMES).includes(nickname) && nickname !== NAMES[DEMO_UID]) return Promise.resolve({ error: { code: '23505' } }); NAMES[DEMO_UID] = nickname; return ok(); },
+    addStamp(id, kind) { find(id).reactions.push({ kind, user_id: DEMO_UID }); return ok(); },
+    removeStamp(id, kind) { const i = find(id); i.reactions = i.reactions.filter((r) => !(r.kind === kind && r.user_id === DEMO_UID)); return ok(); },
+    report(id, reason) {
+      if (rl.some((r) => r.idea_id === id && r.reporter === DEMO_UID)) return Promise.resolve({ error: { code: '23505' } });
+      rl.push({ id: nid(), idea_id: id, reason, created_at: new Date().toISOString(), resolved: false, reporter: DEMO_UID });
+      if (rl.filter((r) => r.idea_id === id && !r.resolved).length >= 3) find(id).hidden = true; /* 本番と同じ「3件で自動非表示」 */
+      return ok();
+    },
+    deleteIdea(id) { const k = il.findIndex((i) => i.id === id); if (k >= 0) il.splice(k, 1); return ok(); },
+    setHidden(id, hidden) { find(id).hidden = hidden; if (!hidden) rl.forEach((r) => { if (r.idea_id === id) r.resolved = true; }); return ok(); },
+    updateIdea(id, patch) { Object.assign(find(id), patch); return ok(); },
+    insertIdea(row) {
+      const i = idea(DEMO_UID, row.what, row.for_whom, row.plant, 0, [], []); i.created_at = new Date().toISOString(); il.push(i);
+      setTimeout(async () => { /* 5秒後に、架空の人が応援する */
+        if (!demo || !find(i.id)) return;
+        i.reactions.push({ kind: 'like', user_id: 'u1' }); await refresh(); toast('（見本）はるかさんが「いいね」を押しました');
+      }, 5000);
+      return ok();
+    },
+    insertStep(id, body) { find(id).steps.push({ id: nid(), body, done_at: null, created_at: new Date().toISOString() }); return ok(); },
+    deleteStep(sid) { il.forEach((i) => (i.steps = i.steps.filter((s) => s.id !== sid))); return ok(); },
+    updateStep(sid, patch) { il.forEach((i) => i.steps.forEach((s) => { if (s.id === sid) Object.assign(s, patch); })); return ok(); },
+    loadMod() {
+      const reports = rl.filter((r) => !r.resolved);
+      const ids = new Set(reports.map((r) => r.idea_id));
+      return ok({ reports, hidden: il.filter((i) => i.hidden).map(withAuthor), reported: il.filter((i) => ids.has(i.id)).map(withAuthor) });
+    },
+    nick: () => NAMES[DEMO_UID],
+  };
+}
+async function enterDemo() {
+  demo = true; db = demoDb();
+  user = { id: DEMO_UID }; me = { id: DEMO_UID, nickname: db.nick(), role: 'moderator' };
+  $('#demo-banner').hidden = false; $('#logout-btn').textContent = '見本を終わる';
+  $('#tab-mod').hidden = false;
+  screen('app'); show('feed');
+}
+function leaveDemo() { location.replace(location.pathname); }
+$('#demo-btn').addEventListener('click', enterDemo);
+$('#demo-exit').addEventListener('click', leaveDemo);
 
 /* ---------- 起動 ---------- */
 $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) show(b.dataset.view); });
 $('#ver').textContent = `バージョン ${VERSION}`;
 readAuthError();
+if (new URLSearchParams(location.search).has('demo')) enterDemo();
 let lastUid;
 sb.auth.onAuthStateChange((event, session) => {
   const uid = session ? session.user.id : null;
