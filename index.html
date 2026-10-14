@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
@@ -23,6 +23,8 @@
   <p class="lead">まだ形になっていなくて大丈夫。<br>思いつきを、ひとことで蒔いてみよう。</p>
   <button id="login-btn" class="primary">学校のGoogleアカウントでログイン</button>
   <p id="login-error" class="error" hidden></p>
+  <button id="demo-btn" class="ghost wide">ログインせずに、見本を見る</button>
+  <p class="small">見本では、架空の人と種で、ひととおりの動きを試せます。押しても保存されません。</p>
   <p class="small">ログイン画面に「lotmxestisnibdyfemdk.supabase.co に移動」と表示されます。このアプリのログイン用サーバーの名前です。</p>
   <p class="small">投稿に出るのはニックネームだけです。名前やメールアドレスは、ほかの人には見えません。<br><a href="privacy.html">データの扱いについて</a></p>
 </section>
@@ -40,6 +42,7 @@
 <!-- アプリ本体 -->
 <div id="app" hidden>
   <main>
+    <p id="demo-banner" class="banner" hidden>🧪 見本モードです。人・種・応援はすべて架空で、押しても保存されません。<button id="demo-exit" class="linkbtn">ログイン画面へ</button></p>
     <!-- みんなの種 -->
     <section id="view-feed" class="view">
       <header><p class="eyebrow">みんなの種</p><h1>どの種を、応援する？</h1></header>
@@ -112,6 +115,6 @@
 
 <div id="toast" hidden role="status"></div>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
